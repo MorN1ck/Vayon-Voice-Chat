@@ -37,8 +37,12 @@ io.on('connection', (socket) => {
     rooms[roomCode].push({id: socket.id, name: username});
   
     socket.join(roomCode);
+    socket.username = username;
     socket.emit('roomCreated', roomCode);
+    socket.emit('name', socket.username, socket.id);
+    io.to(roomCode).emit('userUpdate', rooms[roomCode]);
   });
+
   socket.on('joinRoom', ({ username, roomCode }) => {
     if (!rooms[roomCode]) {
       socket.emit('roomNotFound');
@@ -46,11 +50,45 @@ io.on('connection', (socket) => {
     }
 
     socket.join(roomCode);
+    socket.username = username;
     rooms[roomCode].push({ id: socket.id, name: username });
+
     socket.emit('userPush', roomCode);
-    io.to(roomCode).emit('userJoined', username) //не работает не приходит возможно в том то что импортируется несколько сокет
+    socket.emit('name', socket.username, socket.id);
+    io.to(roomCode).emit('userUpdate', rooms[roomCode]);
   });
-})
+
+  socket.on('sendMessage', ({ roomCode, text }) => {
+    const message = {
+      username: socket.username,
+      text,
+      id: Date.now()
+    };
+    io.to(roomCode).emit('newMessage', message);
+  });
+
+  socket.on('signal', ({ to, signal }) => {
+    io.to(to).emit('signal', { from: socket.id, signal });
+  });
+
+  socket.on('leaveRoom', ({ roomCode }) => {
+    socket.leave(roomCode);
+
+    if (rooms[roomCode]) {
+      // Удаляем пользователя из массива комнаты
+      rooms[roomCode] = rooms[roomCode].filter(user => user.id !== socket.id);
+
+      // Обновляем пользователей в комнате
+      io.to(roomCode).emit('userUpdate', rooms[roomCode]);
+
+      // Если никого не осталось — удаляем комнату
+      if (rooms[roomCode].length === 0) {
+        delete rooms[roomCode];
+      }
+    }
+
+  });
+});
 
 
 // Статическая папка для фронтенда

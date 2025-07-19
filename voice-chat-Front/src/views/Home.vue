@@ -12,24 +12,30 @@ const roomCode = ref('');
 const createRoom = () => {
     if(username.value == '') return alert('Введите ваше имя (для теста дальше добавь стиль)');
     else{
-       socket.emit('createRoom', username.value);
-       socket.on('roomCreated', (code) => {
-           router.push(`/room/${code}`);
-       })
+        socket.emit('createRoom', username.value);
+        socket.on('roomCreated', (code) => {
+            localStorage.setItem('username', username.value);
+            router.push(`/room/${code}`);
+        })
     } 
 }
 const joinRoom =  () => {
     if(username.value == '' || roomCode.value == '') return alert('Введите ваше имя (для теста дальше добавь стиль)');
     else{
-        socket.emit('joinRoom', {username: username.value, roomCode: roomCode.value});
-        socket.on('userPush', (roomCode) => {
-            router.push(`/room/${roomCode}`);
-        })
-        socket.on('roomNotFound', () => {
-            alert('Комната не найдена');
-        })
+        // socket.on('userUpdate', (data) => { //завтра доделай это неправильно так как он делает запрос до отправки данных в бек после joinroom срабатывает userupdate поэтому результат ничего
+            // if (data[roomCode.value].name == username.value) return alert('Имя занято');
+            socket.emit('joinRoom', {username: username.value, roomCode: roomCode.value});
+            socket.on('userPush', (roomCode) => {
+                localStorage.setItem('username', username.value);
+                router.push(`/room/${roomCode}`);
+            })
+            socket.on('roomNotFound', () => {
+                alert('Комната не найдена');
+            })
+        // })   
     }
 }
+
 </script>
 
 <template>
