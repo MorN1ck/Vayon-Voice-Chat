@@ -6,7 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origins: ['http://localhost:5173', 'http://192.168.1.201:5173'],
     methods: ['GET', 'POST']
   }
 });
@@ -48,6 +48,10 @@ io.on('connection', (socket) => {
       socket.emit('roomNotFound');
       return;
     }
+    if (rooms[roomCode].length >= 5) {
+      socket.emit('roomFull');
+      return;
+    }
 
     socket.join(roomCode);
     socket.username = username;
@@ -86,7 +90,6 @@ io.on('connection', (socket) => {
         delete rooms[roomCode];
       }
     }
-
   });
 });
 

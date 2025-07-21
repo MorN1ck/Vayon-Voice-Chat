@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { onBeforeRouteLeave } from 'vue-router'
 import { socket } from '../socket';
@@ -21,7 +21,7 @@ const localStream = ref('');
 const audio = ref('');
 const micOn = ref(true);
 const peer = ref('');
-
+const messagesContainer = ref(null)
 
 async function getLocalStream() {
   localStream.value = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -57,7 +57,6 @@ onMounted(async () => {
         trickle: false,
         stream: localStream.value
     })
-    // отправка сигнала другому учаснику
     peer.value.on('signal', signal => {
         socket.emit('signal', { to: otherUserId, signal });
     });
@@ -81,6 +80,7 @@ onBeforeRouteLeave((to, from, next) => {
     leaveRoom();
     next();
 })
+
 function toggleMic() {
   const audioTrack = localStream.value.getAudioTracks()[0];
   audioTrack.enabled = !audioTrack.enabled;
@@ -120,6 +120,12 @@ function sendMessage() {
 }
 socket.on('newMessage', (data) => {
     messages.value.push(data);
+    nextTick(() => {
+        const el = messagesContainer.value
+        if (el && el.scrollHeight > el.clientHeight) {
+            el.scrollTop = el.scrollHeight
+        }
+    })
 });
 
 </script>
@@ -140,7 +146,7 @@ socket.on('newMessage', (data) => {
             <p class="exit" @click="Disconnect">Выйти</p>
         </div>
         <div class="chatSpace">
-            <div class="messages">
+            <div class="messages" ref="messagesContainer">
                 <div :class="msg.username === username ? 'myMessageSpace' : 'messageSpace'" v-for="(msg, index) in messages" :key="index">
                     <div :class="msg.username === username ? 'myMessage' : 'message'">
                         <h6>{{ msg.username }}</h6>
@@ -230,7 +236,7 @@ socket.on('newMessage', (data) => {
 .messages{
     height: 86%;
     width: 100%;
-    overflow-x: auto;
+    overflow-y: auto;
     scrollbar-width: none;        /* Firefox */
     -ms-overflow-style: none;     /* IE/Edge */
 }

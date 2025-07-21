@@ -6,6 +6,7 @@ import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfil
 export default defineConfig({
   plugins: [vue()],
   server: {
+    host: true,
     proxy: {
       '/socket.io': {
         target: 'http://localhost:3000',
