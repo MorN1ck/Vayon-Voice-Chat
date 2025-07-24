@@ -11,9 +11,10 @@ const username = ref('');
 const roomCode = ref('');
 const isWelcome = ref(false);
 const onClickToggle = ref(false);
+const isError = ref(false);
 
 const createRoom = () => {
-    if(username.value == '') return alert('Введите ваше имя (для теста дальше добавь стиль)');
+    if(username.value == '') return isError.value = 'create';
     else{
         socket.emit('createRoom', username.value);
         socket.on('roomCreated', (code) => {
@@ -24,7 +25,7 @@ const createRoom = () => {
 }
 const joinRoom =  () => {
     if(onClickToggle.value == false) return onClickToggle.value = true;
-    if(username.value == '' || roomCode.value == '') return alert('Введите ваше имя (для теста дальше добавь стиль)');
+    if(username.value == '' || roomCode.value == '') return isError.value = 'join';
     else{ 
         socket.emit('joinRoom', {username: username.value, roomCode: roomCode.value});
         socket.on('userPush', (roomCode) => {
@@ -32,10 +33,10 @@ const joinRoom =  () => {
             router.push(`/room/${roomCode}`);
         })
         socket.on('roomNotFound', () => {
-            alert('Комната не найдена');
+            isError.value = 'notFound';
         })
         socket.on('roomFull', () => {
-            alert('Комната заполнена');
+            isError.value = 'roomFull';
         })
     }
 }
@@ -57,7 +58,7 @@ onMounted(() => {
                     <p>- это платформа для одноразового</p>
                     <p>голосового общения.</p>
                     <p>Без регистрации, без входа, без хранения данных.</p>
-                    <p>Просто создай комнату — и общайся с друзьями.</p>
+                    <p>Просто создай комнату (до 5 чел) — и общайся.</p>
                     <p>Удобно. Быстро. Анонимно.</p>
                 </div>
                 <input type="text" placeholder="Введите ваше имя" v-model="username">
@@ -70,8 +71,28 @@ onMounted(() => {
                 </div>
             </div>
         </div>
-        
     </transition>
+    
+    <div class="errBg" v-if="isError == 'create' || isError == 'join' || isError == 'notFound' || isError == 'roomFull'">
+        <transition name="fadeModal">
+            <div class="errModal">
+                <div class="err" v-show="isError == 'create'">
+                    <p>Введите ваше имя</p>
+                </div>
+                <div class="err" v-show="isError == 'join'">
+                    <p>Введите ваше имя и код комнаты</p>
+                </div>
+                <div class="err" v-show="isError == 'notFound'">
+                    <p>Комната не найдена</p>
+                </div>
+                <div class="err" v-show="isError == 'roomFull'">
+                    <p>Комната заполнена</p>
+                </div>
+                <button @click="isError = false">ОК</button>
+            </div>
+        </transition>
+    </div>
+    
 </template>
 
 <style scoped>
@@ -81,6 +102,10 @@ onMounted(() => {
 }
 .fade-input-enter-active,
 .fade-input-leave-active {
+    animation: fade-in 0.5s ease-out;
+}
+.fadeModal-enter-active,
+.fadeModal-leave-active {
     animation: fade-in 0.5s ease-out;
 }
 @keyframes fade-in {
@@ -142,5 +167,66 @@ onMounted(() => {
 .buttons button:hover{
     background-color: rgba(255, 255, 255, 0.822);
     transition: all 0.2s ease-in-out;
+}
+.errBg{
+    background-color: rgba(0, 0, 0, 0.801);
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.errModal{
+    position: relative;
+    width: 30%;
+    height: 30%;
+    background-color: rgb(0, 0, 0);
+    box-shadow: white 0px 0px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 10px 20px;
+    opacity: 0.9;
+}
+.errModal button{
+    position: absolute;
+    bottom: 10px;
+    width: 90%; 
+    height: auto;
+    border-radius: 20px;
+    font-weight: bold;
+    color: black;
+    padding: 10px 20px;
+    font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+}
+.errModal button:hover{
+    background-color: rgba(255, 255, 255, 0.822);
+    transition: all 0.2s ease-in-out;
+}
+.err{
+    color: white;
+    font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+}
+@media screen and (max-width: 768px) {
+    .errModal{
+        width: 70%;
+        height: 30%;
+    } 
+}
+@media screen and (max-height: 600px) {
+    .errBg{
+        height: 110vh;
+    }
+}
+@media screen and (max-height: 430px) {
+    .errBg{
+        height: 140vh;
+    }
+ 
 }
 </style>

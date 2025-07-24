@@ -217,7 +217,9 @@ socket.on('newMessage', (data) => {
 }
 .roomCode h5{
     font-size: clamp(0.8rem, 2vw, 1rem);
+    user-select: text;
 }
+
 .code{
     position: absolute;
     right: 45%;
@@ -266,6 +268,7 @@ socket.on('newMessage', (data) => {
 }
 .message p{
     font-size: min(13px, 2.5vh);
+    user-select: text;
 }
 
 .myMessageSpace{
@@ -288,6 +291,7 @@ socket.on('newMessage', (data) => {
 }
 .myMessage p{
     font-size: min(13px, 2.5vh);
+    user-select: text;
 }
 .input{
     display: flex;
