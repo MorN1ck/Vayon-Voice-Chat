@@ -5,8 +5,10 @@ import { onBeforeRouteLeave } from 'vue-router'
 import { socket } from '../socket';
 import Peer from 'simple-peer';
 
-import micImg from '../assets/voice.png';
-import soundImg from '../assets/sound.png';
+import micImg from '../assets/micro.svg';
+import micMuteImg from '../assets/micro-mute.svg';
+import soundOnImg from '../assets/sound-on.svg';
+import soundMuteImg from '../assets/sound-mute.svg';
 
 
 const route = useRoute();
@@ -20,6 +22,7 @@ const message = ref('');
 const localStream = ref('');
 const audio = ref('');
 const micOn = ref(true);
+const isMuted = ref(false)
 const peer = ref('');
 const messagesContainer = ref(null)
 
@@ -45,12 +48,6 @@ onMounted(() => {
 })
 onMounted(async () => {
     await getLocalStream();
-    // локальное воис потом при публикаций удалить
-    audio.value = document.createElement('audio');
-    audio.value.srcObject = localStream.value;
-    audio.value.autoplay = true;
-    audio.value.muted = false; // ⚠️ будет слышно с задержкой и эхо
-    document.body.appendChild(audio.value);
     //simple peer
     peer.value = new Peer({
         initiator: true,
@@ -82,13 +79,13 @@ onBeforeRouteLeave((to, from, next) => {
 })
 
 function toggleMic() {
-  const audioTrack = localStream.value.getAudioTracks()[0];
-  audioTrack.enabled = !audioTrack.enabled;
-  micOn.value = audioTrack.enabled;
+    const audioTrack = localStream.value.getAudioTracks()[0];
+    audioTrack.enabled = !audioTrack.enabled;
+    micOn.value = audioTrack.enabled;
 }
 function toggleSound() {
-  audio.value.muted = !audio.value.muted;
-  console.log(audio.value.muted);
+    isMuted.value = !isMuted.value
+    audio.value.muted = isMuted.value
 }
 function leaveRoom() {
     peer.value.destroy();
@@ -130,45 +127,44 @@ socket.on('newMessage', (data) => {
 
 </script>
 <template>
-    <div class="col-md-4">
-        <div class="header">
-            <div class="elements">
-               <img @click="toggleSound" :src="audio.muted ? micImg : soundImg" alt="">
-                <div class="users">
-                    <img v-for="user in users" :key="user.id" src="../assets/account_profile_user_icon.png" :alt="user.name">
-                </div>
-                <img @click="toggleMic" :src="micOn ? micImg : soundImg" style="height: 60px;" alt=""> 
+    <div class="header">
+        <div class="elements">
+            <img @click="toggleSound" :src="isMuted ? soundMuteImg : soundOnImg" alt="">
+            <div class="users">
+                <img v-for="user in users" :key="user.id" src="../assets/account_profile_user_icon.png" :alt="user.name">
             </div>
-            <div class="roomCode">
-                <h5>КОД:</h5>
-                <h5 class="code">{{ $route.params.roomCode }}</h5>
-            </div>
-            <p class="exit" @click="Disconnect">Выйти</p>
+            <img id="mic" @click="toggleMic" :src="micOn ? micImg : micMuteImg" alt=""> 
         </div>
-        <div class="chatSpace">
-            <div class="messages" ref="messagesContainer">
-                <div :class="msg.username === username ? 'myMessageSpace' : 'messageSpace'" v-for="(msg, index) in messages" :key="index">
-                    <div :class="msg.username === username ? 'myMessage' : 'message'">
-                        <h6>{{ msg.username }}</h6>
-                        <p>{{ msg.text }}</p>
-                    </div>
+        <div class="roomCode">
+            <h5>КОД:</h5>
+            <h5 class="code">{{ $route.params.roomCode }}</h5>
+        </div>
+        <p class="exit" @click="Disconnect">Выйти</p>
+    </div>
+    <div class="chatSpace">
+        <div class="messages" ref="messagesContainer">
+            <div :class="msg.username === username ? 'myMessageSpace' : 'messageSpace'" v-for="(msg, index) in messages" :key="index">
+                <div :class="msg.username === username ? 'myMessage' : 'message'">
+                    <h6>{{ msg.username }}</h6>
+                    <p>{{ msg.text }}</p>
                 </div>
             </div>
-            <div class="input">
-                <input type="text" placeholder="Введите сообщение" v-model="message" @keydown.enter="sendMessage">
-                <button @click="sendMessage">Отправить</button>
-            </div>
+        </div>
+        <div class="input">
+            <input type="text" placeholder="Введите сообщение" v-model="message" @keydown.enter="sendMessage">
+            <button @click="sendMessage">Отправить</button>
         </div>
     </div>
+    
 </template>
 <style scoped>
 .header{
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 10px 0px;
     width: 100%;
     color: #800000;
-    margin-top: 20px;
 }
 .elements{
     display: flex;
@@ -180,61 +176,71 @@ socket.on('newMessage', (data) => {
     border-radius: 20px;
 }
 .elements img{
-    height: 50px;
-    width: 50px;
+    height: clamp(30px, 3.33vw, 50px);
+    width: clamp(30px, 3.33vw, 50px);
     margin: 0px 10px;
     cursor: pointer;
+}
+#mic{
+    height: clamp(25px, 3vw, 45px); 
+    width: clamp(25px, 3vw, 45px);
 }
 .users{
     display: flex;
     flex-direction: row;
     align-items: center;
-    height: 100px;
+    height: auto;
     width: auto;
     border: 1px solid #ffffff;
     border-radius: 20px;
-    padding: 0px 10px;
+    padding: 20px 10px;
 }
 .users img{
     background-color: white;
     border-radius: 50%;
-    height: 50px;
-    width: 50px;
+    height: clamp(30px, 3.33vw, 50px);
+    width: clamp(30px, 3.33vw, 50px);
     margin: 0px 10px;
 }
 .roomCode{
+    position: relative;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    flex-direction: row;
     width: 60%;
     color: #ffffff;
     border: solid 1px #ffffff;
     border-radius: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: row;
     margin: 10px 0px;
-    padding: 10px 20px;
+    padding: clamp(5px, 0.5vw, 10px) clamp(10px, 0.6vw, 20px);
+}
+.roomCode h5{
+    font-size: clamp(0.8rem, 2vw, 1rem);
 }
 .code{
-    margin-right: 40%; 
+    position: absolute;
+    right: 45%;
     font-style: italic;
 }
 .exit{
     color: #af0101;
     cursor: pointer;
+    font-size: clamp(0.8rem, 1vw, 1rem);
 }
 .exit:hover{
     color: #ff0000;
     text-decoration: underline;
 }
 .chatSpace{
-    height: 60vh;
+    height: auto;
     width: 100%;
     background-color: #ffffff;
     border-radius: 20px;
     padding: 10px 5px;
 }
 .messages{
-    height: 86%;
+    height: 50vh;
     width: 100%;
     overflow-y: auto;
     scrollbar-width: none;        /* Firefox */
@@ -259,11 +265,9 @@ socket.on('newMessage', (data) => {
     color: #ffffff;
 }
 .message p{
-    font-size: small;
+    font-size: min(13px, 2.5vh);
 }
-.myMessage p{
-    font-size: small;
-}
+
 .myMessageSpace{
     display: flex;
     flex-direction: row;
@@ -282,6 +286,9 @@ socket.on('newMessage', (data) => {
     padding: 1% 2%;
     color: #ffffff;
 }
+.myMessage p{
+    font-size: min(13px, 2.5vh);
+}
 .input{
     display: flex;
     flex-direction: row;
@@ -293,7 +300,7 @@ socket.on('newMessage', (data) => {
 }
 .input input{
     width: 70%;
-    height: 50px;
+    height: min(50px, 5vh);
     border-radius: 20px;
     padding: 20px;
     outline: none;
@@ -301,34 +308,57 @@ socket.on('newMessage', (data) => {
     box-shadow: black 0px 0px 5px;
     margin: 5px 0px;
     margin-right: 1%;
+    font-size: min(13px, 2.5vh);
 }
 input:focus{
     box-shadow: black 0px 0px 13px;
     transition: all 0.2s ease-in-out;
 }
-/* .input input:hover{
-    box-shadow: black 0px 0px 13px;
-    transition: all 0.2s ease-in-out;
-} */
+
 .input button{
     width: 20%;
-    height: 50px;
+    height: min(50px, 6.25vh);
     border-radius: 20px;
     border: none;
     box-shadow: black 0px 0px 5px;
     font-weight: bold;
     color: #207a25;
-    font-size: small;
+    font-size: clamp(6px, 2.5vh, 10px);
 }
 .input button:hover{
     box-shadow: #207a25 0px 0px 10px;
     transition: all 0.2s ease-in-out;
 }
-@media screen and (max-width: 768px) {
-    .input button, .input input{
-        height: 40px;
-        font-size: 10px;
+@media (min-height: 2000px) {
+    .roomCode h5, .exit{
+        font-size: 30px;
+    }
+}
+@media (min-height: 1400px) {
+    .elements img{
+        height: 100px;
+        width: 100px;
+    }
+    #mic{
+        height: 95px;
+        width: 95px;
+    }
+    .users{
+        padding: 20px 20px;
+    }
+    .roomCode h5, .exit{
+        font-size: 30px;
+    }
+}
+@media (min-height: 1300px) {
+    .input input, .input button, .myMessage p{
+        font-size: 20px;
     }
     
+}
+@media (max-width: 768px) {
+    .messages{
+        height: 50vh;
+    }
 }
 </style>

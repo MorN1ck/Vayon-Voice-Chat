@@ -47,31 +47,31 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="mid col-md-4">
-        <transition name="fade">
-            <div v-if="isWelcome">
-                <div class="header"><h1>VAYON</h1></div>
-                <div class="main">
-                   <h1>Добро пожаловать</h1>
-                   <div class="info d-flex flex-column align-items-center pt-3 pb-3">
-                        <p>VAYON</p>
-                        <p>- это платформа для одноразового</p>
-                        <p>голосового общения.</p>
-                        <p>Без регистрации, без входа, без лишнего.</p>  
-                    </div>
-                    <input type="text" placeholder="Введите ваше имя" v-model="username">
-                    <transition name="fade-input">
-                        <input type="text" v-if="onClickToggle" placeholder="Код комнаты" v-model="roomCode">
-                    </transition>
-                    <div class="buttons">
-                        <button @click="createRoom">Создать</button>
-                        <button @click="joinRoom">Войти</button>
-                    </div>
+    <transition name="fade">
+        <div v-if="isWelcome">
+            <div class="header"><h1>VAYON</h1></div>
+            <div class="main">
+               <h1 style="font-size: clamp(2rem, 2vw, 3rem);">Добро пожаловать</h1>
+               <div class="info d-flex flex-column align-items-center pt-3 pb-3">
+                    <h5>VAYON</h5>
+                    <p>- это платформа для одноразового</p>
+                    <p>голосового общения.</p>
+                    <p>Без регистрации, без входа, без хранения данных.</p>
+                    <p>Просто создай комнату — и общайся с друзьями.</p>
+                    <p>Удобно. Быстро. Анонимно.</p>
+                </div>
+                <input type="text" placeholder="Введите ваше имя" v-model="username">
+                <transition name="fade-input">
+                    <input type="text" v-if="onClickToggle" placeholder="Код комнаты" v-model="roomCode">
+                </transition>
+                <div class="buttons">
+                    <button @click="createRoom">Создать</button>
+                    <button @click="joinRoom">Войти</button>
                 </div>
             </div>
-            
-        </transition>
-    </div>
+        </div>
+        
+    </transition>
 </template>
 
 <style scoped>
@@ -107,24 +107,24 @@ onMounted(() => {
     font-weight: 400;
     font-style: normal;
     color: white;
-    font-size: 64px;
+    font-size: clamp(50px, 4vw, 64px);
 }
 .main{
     display: flex;
     align-items: center;
-    height: 60vh;
+    justify-content: center;
+    height: 78vh;
     width: 100%;
     color: white;
-    flex-direction: column;
-    padding: 30% 0%;
+    flex-direction: column
 }
-.info p{
-    font-size: 20px;
+.info p, h5{
+    font-size: clamp(0.85rem, 1.3vw, 1rem);
     margin: 0;
     padding: 0;
 }
 .main input{
-    width: 300px;
+    width: clamp(230px, 30vw, 300px);
     height: 50px;
     border-radius: 20px;
     padding: 20px;
@@ -133,7 +133,7 @@ onMounted(() => {
     margin: 5px 0px;
 }
 .buttons button{
-    width: 130px;
+    width: clamp(7rem, 13vw, 9.1rem); 
     height: 50px;
     border-radius: 20px;
     font-weight: bold;

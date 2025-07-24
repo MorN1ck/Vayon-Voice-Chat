@@ -10,8 +10,8 @@ const isModal = ref(false)
  <main>
   <div class="container-fluid">
     <div class="row">
-      <div class="col-md-4"></div>
-      <router-view/>
+      <div class="col-xl-4"></div>
+      <div class="col-xl-4"><router-view/></div>
       <div class="supportAuthor" v-show="isModal">
         <transition name="fadeWindow">
           <div class="window" v-show="isModal">
@@ -25,13 +25,16 @@ const isModal = ref(false)
           </div>
         </transition>
       </div>
-      <div class="col-md-4"></div>
+      <div class="col-xl-4"></div>
     </div>
   </div>
 </main>
 <footer>
-  <p class="footer" @click="isModal = !isModal">Поддержать автора</p>
-  <a class="footer text-decoration-none" href="/privacy-policy" target="_blank" rel="noopener noreferrer"><p>Политика конфиденциальности</p></a>
+  <div class="block d-flex flex-row justify-content-center">
+    <p class="footer" @click="isModal = !isModal">Поддержать автора</p>
+    <p style="margin: 0px 5px;">|</p>
+    <a class="footer text-decoration-none" href="/privacy-policy" target="_blank" rel="noopener noreferrer"><p>Политика конфиденциальности</p></a>
+  </div>
   <p>©2025 VAYON</p>
 </footer>
 </template> 
@@ -52,15 +55,17 @@ const isModal = ref(false)
         transform: translateY(0);
     }
 }
+
 main{
-  height: 100vh;
-}
-main, footer{
+  height: 90vh;
   width: 100%;
   background-color: black;
 }
+
 footer{
-  height: auto;
+  height: 10vh;
+  width: 100%;
+  background-color: black;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -69,6 +74,7 @@ footer{
 footer p{
   color: white;
   cursor: pointer;
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
 }
 
 .footer:hover{
@@ -83,7 +89,7 @@ footer p{
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-direction: column
+  flex-direction: column;
 }
 .window{
   width: 50%;
@@ -99,5 +105,20 @@ footer p{
 .window svg{
   cursor: pointer;
 }
-
+@media screen and (max-width: 768px) {
+  .window{
+    width: 80%;
+    height: 80%;
+  }
+}
+@media screen and (max-height: 600px) {
+  main{
+    height: 100vh;
+  }
+}
+@media (max-height: 430px) {
+  main{
+    height: 130vh;
+  }
+}
 </style>
