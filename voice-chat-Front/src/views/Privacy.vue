@@ -1,6 +1,19 @@
 <script setup>
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
+
+useHead({
+    title: 'VAYON - Политика конфиденциальности',
+    meta: [
+        {
+            name: 'description',
+            content: 'Политика конфиденциальности сервиса VAYON',
+        }
+    ]
+})
+
 const Router = useRouter();
+
 </script>
 <template>
     <div class="d-flex flex-column align-items-center text-white">

@@ -4,40 +4,72 @@ import { useRoute, useRouter } from 'vue-router';
 import { onBeforeRouteLeave } from 'vue-router'
 import { socket } from '../socket';
 import Peer from 'simple-peer';
+import { useHead } from '@vueuse/head';
 
 import micImg from '../assets/micro.svg';
 import micMuteImg from '../assets/micro-mute.svg';
 import soundOnImg from '../assets/sound-on.svg';
 import soundMuteImg from '../assets/sound-mute.svg';
 
+useHead({
+    title: 'VAYON - Room',
+    meta: [
+        {
+            name: 'description',
+            content: 'Создавай комнаты и общайся голосом без регистрации.',
+        },
+        {
+            name: 'robots',
+            content: 'noindex',
+        },
+    ]
+})
 
 const route = useRoute();
 const router = useRouter();
 
 const username = ref('');
 const users = ref([]);
-const otherUserId = ref('');
 const messages = ref([]);
 const message = ref('');
 const localStream = ref('');
-const audio = ref('');
+const audioStreams = ref({});
+const audioElements = ref({});
 const micOn = ref(true);
 const isMuted = ref(false)
-const peer = ref('');
+const peers = ref({});
 const messagesContainer = ref(null)
 
 async function getLocalStream() {
-  localStream.value = await navigator.mediaDevices.getUserMedia({ audio: true });
+  try {
+    localStream.value = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    console.error('Error accessing microphone:', err);
+    alert('Microphone access denied');
+    router.push('/not-found');
+  }
 }
 
 onMounted(() => {
     socket.on('userUpdate', (userData) => {
-        users.value = userData;
-        console.log(users.value);
+      users.value = userData;
+      userData.forEach(user => {
+        if (user.id !== socket.id && !peers.value[user.id]) {
+          createPeer(user.id, true);
+        }
+      });
+      // Удаление пиров для отключенных пользователей
+      Object.keys(peers.value).forEach(userId => {
+        if (!userData.find(user => user.id === userId)) {
+          peers.value[userId].destroy();
+          delete peers.value[userId];
+          delete audioStreams.value[userId];
+          delete audioElements.value[userId];
+        }
+      });
     });
     socket.on('name', (myName, userId) => {
         username.value = myName;
-        otherUserId.value = userId;
         
     })
     if (!localStorage.getItem('username') && !username.value) {
@@ -49,24 +81,11 @@ onMounted(() => {
 onMounted(async () => {
     await getLocalStream();
     //simple peer
-    peer.value = new Peer({
-        initiator: true,
-        trickle: false,
-        stream: localStream.value
-    })
-    peer.value.on('signal', signal => {
-        socket.emit('signal', { to: otherUserId, signal });
-    });
-    peer.value.on('stream', remoteStream => {
-        audio.value = document.createElement('audio');
-        audio.value.srcObject = remoteStream;
-        audio.value.autoplay = true;
-        audio.value.muted = false;
-        document.body.appendChild(audio.value);
-    });
-    //Получение сигнала от другого участника
-    socket.on('signal', ({ from, signal }) => {
-        peer.value.signal(signal);
+
+    socket.on('signal', (data) => {
+      if (peers.value[data.from]) {
+        peers.value[data.from].signal(data.signal);
+      }
     });
 })
 
@@ -77,6 +96,37 @@ onBeforeRouteLeave((to, from, next) => {
     leaveRoom();
     next();
 })
+// Создаём инициатор peer
+// Создание WebRTC-соединения с другим пользователем
+function createPeer(userId, initiator) {
+    if (!localStream.value) {
+        console.error('Local stream not available');
+        return;
+    }
+    const peer = new Peer({
+      initiator,
+      trickle: false,
+      stream: localStream.value,
+      config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+    });
+
+    // Обработка сигналов WebRTC
+    peer.on('signal', (signal) => {
+      socket.emit('signal', { to: userId, signal });
+    });
+
+    // Получение аудиопотока от другого пользователя
+    peer.on('stream', (stream) => {
+      audioStreams.value[userId] = stream;
+      const audio = document.createElement('audio');
+      audio.srcObject = stream;
+      audio.play();
+    });
+
+    peer.on('error', (err) => console.error(`Peer error with ${userId}:`, err));
+
+    peers.value[userId] = peer;
+}
 
 function toggleMic() {
     const audioTrack = localStream.value.getAudioTracks()[0];
@@ -84,24 +134,29 @@ function toggleMic() {
     micOn.value = audioTrack.enabled;
 }
 function toggleSound() {
-    isMuted.value = !isMuted.value
-    audio.value.muted = isMuted.value
+    isMuted.value = !isMuted.value;
+    Object.values(audioElements.value).forEach(audio => {
+        audio.muted = isMuted.value;
+    });
 }
-function leaveRoom() {
-    peer.value.destroy();
-
-    localStream.value?.getTracks().forEach(track => track.stop());  
-    
-    if (audio.value) {
-        audio.value.pause();
-        audio.value.srcObject = null;
-        if (audio.value && document.body.contains(audio.value)) {
-            document.body.removeChild(audio.value)
-        }
-    }   
-    
-    socket.emit('leaveRoom', { roomCode: route.params.roomCode });  
+function leaveRoom() { 
+    Object.values(peers.value).forEach(peer => peer.destroy());
+    peers.value = {};
+    audioStreams.value = {};
+    Object.values(audioElements.value).forEach(audio => {
+      audio.pause();
+      audio.srcObject = null;
+      if (document.body.contains(audio)) {
+        document.body.removeChild(audio);
+      }
+    });
+    audioElements.value = {};
+    if (localStream.value) {
+      localStream.value.getTracks().forEach(track => track.stop());
+    }
+    socket.emit('leaveRoom', { roomCode: route.params.roomCode });
     localStorage.removeItem('username');
+    
 }
 function Disconnect() {
     leaveRoom();

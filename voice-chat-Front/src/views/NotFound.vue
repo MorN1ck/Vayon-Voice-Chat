@@ -2,6 +2,22 @@
 import { on } from 'events';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head'
+
+useHead({
+    title: 'Страница не найдена | Vayon',
+    meta: [
+      {
+        name: 'description',
+        content: 'К сожалению, запрашиваемая страница не найдена. Проверьте ссылку или вернитесь на главную.',
+      },
+      {
+        name: 'robots',
+        content: 'noindex',
+      },
+    ],
+})
+
 const Router = useRouter();
 const anim = ref(false);
 onMounted(() => {

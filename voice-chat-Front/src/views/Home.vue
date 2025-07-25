@@ -1,9 +1,18 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-// import { axios } from 'axios';
 import { useRouter } from 'vue-router';
 import { socket } from '../socket';
-import { on } from 'events';
+import { useHead } from '@vueuse/head';
+
+useHead({
+    title: 'VAYON — голосовой чат',
+    meta: [
+        {
+            name: 'description',
+            content: 'Создавай комнаты и общайся голосом без регистрации.',
+        },
+    ]
+})
 
 const router = useRouter();
 

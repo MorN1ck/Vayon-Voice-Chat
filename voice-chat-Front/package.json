@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vueuse/head": "^2.0.0",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
     "buffer": "^6.0.3",

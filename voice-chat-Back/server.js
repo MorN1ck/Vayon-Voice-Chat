@@ -10,13 +10,6 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 });
-app.use(cors(
-  {
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-));
 
 const rooms = {};
 // Генерация 5-значного кода комнаты (буквы и цифры)
@@ -31,7 +24,6 @@ function generateRoomCode() {
 
 io.on('connection', (socket) => {
   socket.on('createRoom', (username) => {
-
     const roomCode = generateRoomCode();
     rooms[roomCode] = [];
     rooms[roomCode].push({id: socket.id, name: username});
