@@ -21,7 +21,6 @@
 ## 🚀 Запуск проекта
 ```bash
 git clone https://github.com/MorN1ck/Vayon-Voice-Chat.git
-cd vayon
 cd voice-chat-Front
 npm run dev
 cd voice-chat-Back
